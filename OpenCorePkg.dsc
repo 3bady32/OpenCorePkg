@@ -37,7 +37,7 @@
   BaseRngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
   BcfgCommandLib|ShellPkg/Library/UefiShellBcfgCommandLib/UefiShellBcfgCommandLib.inf
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
-  DebugLib|OpenCorePkg/Library/OcDebugLogLib/OcDebugLogLib.inf
+  DebugLib|OpenCorePkg/Library/OcDebugLibProtocol/OcDebugLibProtocol.inf
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   MtrrLib|UefiCpuPkg/Library/MtrrLib/MtrrLib.inf
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
@@ -93,6 +93,7 @@
   OcHeciLib|OpenCorePkg/Library/OcHeciLib/OcHeciLib.inf
   OcHiiDatabaseLocalLib|OpenCorePkg/Library/OcHiiDatabaseLib/OcHiiDatabaseLocalLib.inf
   OcInputLib|OpenCorePkg/Library/OcInputLib/OcInputLib.inf
+  OcLogAggregatorLib|OpenCorePkg/Library/OcLogAggregatorLib/OcLogAggregatorLib.inf
   OcMachoLib|OpenCorePkg/Library/OcMachoLib/OcMachoLib.inf
   OcMacInfoLib|OpenCorePkg/Library/OcMacInfoLib/OcMacInfoLib.inf
   OcMainLib|OpenCorePkg/Library/OcMainLib/OcMainLib.inf
@@ -140,6 +141,7 @@
   UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
   UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
   UefiUsbLib|MdePkg/Library/UefiUsbLib/UefiUsbLib.inf
+  VariablePolicyHelperLib|MdeModulePkg/Library/VariablePolicyHelperLib/VariablePolicyHelperLib.inf
   ResetSystemLib|OpenCorePkg/Library/OcResetSystemLib/OcResetSystemLib.inf
 
   !include NetworkPkg/NetworkLibs.dsc.inc
@@ -221,9 +223,9 @@
   OpenCorePkg/Library/OcCpuLib/OcCpuLib.inf
   OpenCorePkg/Library/OcCryptoLib/OcCryptoLib.inf
   OpenCorePkg/Library/OcDataHubLib/OcDataHubLib.inf
-  OpenCorePkg/Library/OcDebugSerialLib/OcDebugSerialLib.inf
-  OpenCorePkg/Library/OcDebugLogLib/OcDebugLogLib.inf
-  OpenCorePkg/Library/OcDebugNullLib/OcDebugNullLib.inf
+  OpenCorePkg/Library/OcDebugLibSerial/OcDebugLibSerial.inf
+  OpenCorePkg/Library/OcDebugLibProtocol/OcDebugLibProtocol.inf
+  OpenCorePkg/Library/OcDebugLibNull/OcDebugLibNull.inf
   OpenCorePkg/Library/OcDeviceMiscLib/OcDeviceMiscLib.inf
   OpenCorePkg/Library/OcDevicePathLib/OcDevicePathLib.inf
   OpenCorePkg/Library/OcDevicePropertyLib/OcDevicePropertyLib.inf
@@ -239,6 +241,7 @@
   OpenCorePkg/Library/OcHeciLib/OcHeciLib.inf
   OpenCorePkg/Library/OcHiiDatabaseLib/OcHiiDatabaseLocalLib.inf
   OpenCorePkg/Library/OcInputLib/OcInputLib.inf
+  OpenCorePkg/Library/OcLogAggregatorLib/OcLogAggregatorLib.inf
   OpenCorePkg/Library/OcMachoLib/OcMachoLib.inf
   OpenCorePkg/Library/OcMainLib/OcMainLib.inf
   OpenCorePkg/Library/OcMemoryLib/OcMemoryLib.inf
@@ -334,6 +337,9 @@
   CLANGPDB:DEBUG_*_*_CC_FLAGS   = $(OCPKG_BUILD_OPTIONS_GEN) $(OCPKG_ANAL_OPTIONS_GEN) -fstack-protector-strong -mstack-protector-guard=global -ftrivial-auto-var-init=pattern
   CLANGPDB:NOOPT_*_*_CC_FLAGS   = $(OCPKG_BUILD_OPTIONS_GEN) $(OCPKG_ANAL_OPTIONS_GEN) -fstack-protector-strong -mstack-protector-guard=global -ftrivial-auto-var-init=pattern
   CLANGPDB:RELEASE_*_*_CC_FLAGS = $(OCPKG_BUILD_OPTIONS_GEN) $(OCPKG_ANAL_OPTIONS_GEN) -fstack-protector-strong -mstack-protector-guard=global -ftrivial-auto-var-init=pattern
+  CLANGGCC:DEBUG_*_*_CC_FLAGS   = $(OCPKG_BUILD_OPTIONS_GEN) $(OCPKG_ANAL_OPTIONS_GEN) -fstack-protector-strong -mstack-protector-guard=global -ftrivial-auto-var-init=pattern
+  CLANGGCC:NOOPT_*_*_CC_FLAGS   = $(OCPKG_BUILD_OPTIONS_GEN) $(OCPKG_ANAL_OPTIONS_GEN) -fstack-protector-strong -mstack-protector-guard=global -ftrivial-auto-var-init=pattern
+  CLANGGCC:RELEASE_*_*_CC_FLAGS = $(OCPKG_BUILD_OPTIONS_GEN) $(OCPKG_ANAL_OPTIONS_GEN) -fstack-protector-strong -mstack-protector-guard=global -ftrivial-auto-var-init=pattern
   MSFT:DEBUG_*_*_CC_FLAGS       = $(OCPKG_BUILD_OPTIONS_GEN) /wd4723 /GS /kernel
   MSFT:NOOPT_*_*_CC_FLAGS       = $(OCPKG_BUILD_OPTIONS_GEN) /wd4723 /GS /kernel
   MSFT:RELEASE_*_*_CC_FLAGS     = $(OCPKG_BUILD_OPTIONS_GEN) /wd4723 /GS /kernel
@@ -346,3 +352,4 @@
   XCODE:*_*_*_DLINK_FLAGS = -seg1addr 0x1000 -segalign 0x1000
   XCODE:*_*_*_MTOC_FLAGS = -align 0x1000
   CLANGPDB:*_*_*_DLINK_FLAGS = /ALIGN:4096 /FILEALIGN:512
+  CLANGGCC:*_*_*_DLINK_FLAGS = -z common-page-size=0x1000

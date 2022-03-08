@@ -36,6 +36,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/OcConsoleLib.h>
 #include <Library/OcCpuLib.h>
 #include <Library/OcDataHubLib.h>
+#include <Library/OcLogAggregatorLib.h>
 #include <Library/OcDebugLogLib.h>
 #include <Library/OcDeviceMiscLib.h>
 #include <Library/OcDevicePropertyLib.h>
@@ -104,6 +105,7 @@ OcLoadDrivers (
   CONST CHAR8                 *DriverComment;
   CHAR8                       *DriverFileName;
   CONST CHAR8                 *DriverArguments;
+  CONST CHAR8                 *UnescapedArguments;
 
   DriversToConnectIterator = NULL;
   if (DriversToConnect != NULL) {
@@ -208,7 +210,19 @@ OcLoadDrivers (
         FreePool (Driver);
         continue;
       }
-      if (!OcAppendArgumentsToLoadedImage (LoadedImage, &DriverArguments, 1, TRUE)) {
+      UnescapedArguments = XmlUnescapeString (DriverArguments);
+      if (UnescapedArguments == NULL) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "OC: Cannot unescape arguments for driver %a at %u\n",
+          DriverFileName,
+          Index
+          ));
+        gBS->UnloadImage (ImageHandle);
+        FreePool (Driver);
+        continue;
+      }
+      if (!OcAppendArgumentsToLoadedImage (LoadedImage, &UnescapedArguments, 1, TRUE)) {
         DEBUG ((
           DEBUG_ERROR,
           "OC: Unable to apply arguments to driver %a at %u - %r!\n",
@@ -218,8 +232,10 @@ OcLoadDrivers (
           ));
         gBS->UnloadImage (ImageHandle);
         FreePool (Driver);
+        FreePool ((CHAR8 *) UnescapedArguments);
         continue;
       }
+      FreePool ((CHAR8 *) UnescapedArguments);
     }
 
     Status = gBS->StartImage (
@@ -445,9 +461,11 @@ OcReinstallProtocols (
   }
 }
 
+STATIC
 VOID
 OcLoadAppleSecureBoot (
-  IN OC_GLOBAL_CONFIG  *Config
+  IN OC_GLOBAL_CONFIG  *Config,
+  IN OC_CPU_INFO       *CpuInfo
   )
 {
   EFI_STATUS                  Status;
@@ -459,7 +477,7 @@ OcLoadAppleSecureBoot (
 
   SecureBootModel = OC_BLOB_GET (&Config->Misc.Security.SecureBootModel);
   if (AsciiStrCmp (SecureBootModel, OC_SB_MODEL_DEFAULT) == 0 || SecureBootModel[0] == '\0') {
-    SecureBootModel = OcGetDefaultSecureBootModel (Config);
+    SecureBootModel = OcGetDefaultSecureBootModel (Config, CpuInfo);
   }
 
   RealSecureBootModel = OcAppleImg4GetHardwareModel (SecureBootModel);
@@ -836,13 +854,13 @@ OcLoadUefiSupport (
   EFI_HANDLE            *HandleBuffer;
   UINTN                 HandleCount;
   EFI_EVENT             Event;
-  BOOLEAN               AvxEnabled;
+  BOOLEAN               AccelEnabled;
 
   OcReinstallProtocols (Config);
 
   OcImageLoaderInit (Config->Booter.Quirks.ProtectUefiServices);
 
-  OcLoadAppleSecureBoot (Config);
+  OcLoadAppleSecureBoot (Config, CpuInfo);
 
   OcLoadUefiInputSupport (Config);
 
@@ -902,8 +920,8 @@ OcLoadUefiSupport (
   }
 
   if (Config->Uefi.Quirks.EnableVectorAcceleration) {
-    AvxEnabled = TryEnableAvx ();
-    DEBUG ((DEBUG_INFO, "OC: AVX enabled - %u\n", AvxEnabled));
+    AccelEnabled = TryEnableAccel ();
+    DEBUG ((DEBUG_INFO, "OC: AVX enabled - %u\n", AccelEnabled));
   }
 
   if (Config->Uefi.Quirks.ResizeGpuBars >= 0

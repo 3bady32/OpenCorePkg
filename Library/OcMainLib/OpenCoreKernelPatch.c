@@ -363,6 +363,8 @@ OcKernelBlockKexts (
   CONST CHAR8            *Target;
   CONST CHAR8            *Comment;
   CONST CHAR8            *Arch;
+  CONST CHAR8            *Strategy;
+  BOOLEAN                Exclude;
   UINT32                 MaxKernel;
   UINT32                 MinKernel;
 
@@ -376,6 +378,7 @@ OcKernelBlockKexts (
     Target      = OC_BLOB_GET (&Kext->Identifier);
     Comment     = OC_BLOB_GET (&Kext->Comment);
     Arch        = OC_BLOB_GET (&Kext->Arch);
+    Strategy    = OC_BLOB_GET (&Kext->Strategy);
     MaxKernel   = OcParseDarwinVersion (OC_BLOB_GET (&Kext->MaxKernel));
     MinKernel   = OcParseDarwinVersion (OC_BLOB_GET (&Kext->MinKernel));
 
@@ -408,20 +411,25 @@ OcKernelBlockKexts (
       continue;
     }
 
+    Exclude = AsciiStrCmp (Strategy, "Exclude") == 0;
+    //
+    // TODO: Implement cacheless and mkext exclusion if possible.
+    //
     if (CacheType == CacheTypeCacheless) {
-      Status = CachelessContextBlock (Context, Target);
+      Status = CachelessContextBlock (Context, Target, Exclude);
     } else if (CacheType == CacheTypeMkext) {
-      Status = MkextContextBlock (Context, Target);
+      Status = MkextContextBlock (Context, Target, Exclude);
     } else if (CacheType == CacheTypePrelinked) {
-      Status = PrelinkedContextBlock (Context, Target);
+      Status = PrelinkedContextBlock (Context, Target, Exclude);
     } else {
       Status = EFI_UNSUPPORTED;
     }
 
     DEBUG ((
       EFI_ERROR (Status) ? DEBUG_WARN : DEBUG_INFO,
-      "OC: %a blocker result %u for %a (%a) - %r\n",
+      "OC: %a blocker (%a) result %u for %a (%a) - %r\n",
       PRINT_KERNEL_CACHE_TYPE (CacheType),
+      Exclude ? "Exclude" : "Disable",
       Index,
       Target,
       Comment,

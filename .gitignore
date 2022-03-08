@@ -29,6 +29,7 @@ Utilities/TestImg4/Img4
 Utilities/TestMp3/Mp3
 Utilities/TestMp3/test.bin
 Utilities/TestKernelCollection2/KernelCollection2
+Utilities/TestKextInject/BootKernelExtensions.kc
 Utilities/TestKextInject/KextInject
 Utilities/TestKextInject/Result.xml
 Utilities/TestMacho/Macho
@@ -42,7 +43,7 @@ Utilities/TestPeCoff/PeCoff
 *.gcda
 *.gcno
 FUZZDICT
-COVERAGE
+COVERAGE*
 *.sydr*
 sydr-fuzz.toml
 sydr-fuzz-out

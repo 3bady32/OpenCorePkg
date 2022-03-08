@@ -129,11 +129,16 @@ CheckKernelAdd (
   OC_KERNEL_CONFIG  *UserKernel;
   CONST CHAR8       *Arch;
   CONST CHAR8       *BundlePath;
+  UINTN             BundlePathSumSize;
   CONST CHAR8       *Comment;
   CONST CHAR8       *ExecutablePath;
+  UINTN             ExecutableFixedSize;
+  UINTN             ExecutablePathSumSize;
   CONST CHAR8       *MaxKernel;
   CONST CHAR8       *MinKernel;
   CONST CHAR8       *PlistPath;
+  UINTN             PlistFixedSize;
+  UINTN             PlistPathSumSize;
   BOOLEAN           IsLiluUsed;
   BOOLEAN           IsDisableLinkeditJettisonEnabled;
   UINTN             IndexKextInfo;
@@ -199,22 +204,45 @@ CheckKernelAdd (
     //
     // Check the length of path relative to OC directory.
     //
-    if (StrLen (OPEN_CORE_KEXT_PATH) + AsciiStrSize (BundlePath) > OC_STORAGE_SAFE_PATH_MAX) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->BundlePath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+    BundlePathSumSize = L_STR_LEN (OPEN_CORE_KEXT_PATH) + AsciiStrSize (BundlePath);
+    if (BundlePathSumSize > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((
+        DEBUG_WARN,
+        "Kernel->Add[%u]->BundlePath (length %u) is too long (should not exceed %u)!\n",
+        Index,
+        AsciiStrLen (BundlePath),
+        OC_STORAGE_SAFE_PATH_MAX - L_STR_LEN (OPEN_CORE_KEXT_PATH)
+        ));
       ++ErrorCount;
     }
     //
     // There is one missing '\\' after the concatenation of BundlePath and ExecutablePath. Append one.
     //
-    if (StrLen (OPEN_CORE_KEXT_PATH) + AsciiStrLen (BundlePath) + 1 + AsciiStrSize (ExecutablePath) > OC_STORAGE_SAFE_PATH_MAX) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->ExecutablePath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+    ExecutableFixedSize   = L_STR_LEN (OPEN_CORE_KEXT_PATH) + AsciiStrLen (BundlePath) + 1;
+    ExecutablePathSumSize = ExecutableFixedSize + AsciiStrSize (ExecutablePath);
+    if (ExecutablePathSumSize > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((
+        DEBUG_WARN,
+        "Kernel->Add[%u]->ExecutablePath (length %u) is too long (should not exceed %u)!\n",
+        Index,
+        AsciiStrLen (ExecutablePath),
+        OC_STORAGE_SAFE_PATH_MAX - ExecutableFixedSize
+        ));
       ++ErrorCount;
     }
     //
     // There is one missing '\\' after the concatenation of BundlePath and PlistPath. Append one.
     //
-    if (StrLen (OPEN_CORE_KEXT_PATH) + AsciiStrLen (BundlePath) + 1 + AsciiStrSize (PlistPath) > OC_STORAGE_SAFE_PATH_MAX) {
-      DEBUG ((DEBUG_WARN, "Kernel->Add[%u]->PlistPath is too long (should not exceed %u)!\n", Index, OC_STORAGE_SAFE_PATH_MAX));
+    PlistFixedSize   = L_STR_LEN (OPEN_CORE_KEXT_PATH) + AsciiStrLen (BundlePath) + 1;
+    PlistPathSumSize = PlistFixedSize + AsciiStrSize (PlistPath);
+    if (PlistPathSumSize > OC_STORAGE_SAFE_PATH_MAX) {
+      DEBUG ((
+        DEBUG_WARN,
+        "Kernel->Add[%u]->PlistPath (length %u) is too long (should not exceed %u)!\n",
+        Index,
+        AsciiStrLen (PlistPath),
+        OC_STORAGE_SAFE_PATH_MAX - PlistFixedSize
+        ));
       ++ErrorCount;
     }
 
@@ -324,6 +352,7 @@ CheckKernelBlock (
   CONST CHAR8       *MaxKernel;
   CONST CHAR8       *MinKernel;
   CONST CHAR8       *Identifier;
+  CONST CHAR8       *Strategy;
 
   ErrorCount        = 0;
   UserKernel        = &Config->Kernel;
@@ -334,6 +363,7 @@ CheckKernelBlock (
     Identifier      = OC_BLOB_GET (&UserKernel->Block.Values[Index]->Identifier);
     MaxKernel       = OC_BLOB_GET (&UserKernel->Block.Values[Index]->MaxKernel);
     MinKernel       = OC_BLOB_GET (&UserKernel->Block.Values[Index]->MinKernel);
+    Strategy        = OC_BLOB_GET (&UserKernel->Block.Values[Index]->Strategy);
     
     //
     // Sanitise strings.
@@ -368,6 +398,12 @@ CheckKernelBlock (
     }
     if (MinKernel[0] != '\0' && OcParseDarwinVersion (MinKernel) == 0) {
       DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->MinKernel (currently set to %a) is borked!\n", Index, MinKernel));
+      ++ErrorCount;
+    }
+
+    if (AsciiStrCmp (Strategy, "Disable") != 0
+      && AsciiStrCmp (Strategy, "Exclude") != 0) {
+      DEBUG ((DEBUG_WARN, "Kernel->Block[%u]->Strategy is borked (Can only be Disable or Exclude)!\n", Index));
       ++ErrorCount;
     }
   }
